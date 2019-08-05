@@ -1,24 +1,59 @@
-import React from 'react';
-import {AppRegistry, StyleSheet, Text, View} from 'react-native';
+import React, { Component } from 'react';
+import {
+  AppRegistry,
+  StyleSheet,
+  Text,
+  NativeModules,
+  View
+} from 'react-native';
 
-class HelloWorld extends React.Component {
+class HelloWorld extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text style={styles.hello}>世界真美，是不是，哈哈哈哈哈哈哈哈</Text>
+
+        <Text style={styles.welcome}
+        onPress={this.call_button.bind(this)}
+        >
+          React Native 调用原生方法!
+        </Text>
+
+        <Text style={styles.instructions}>
+          To get started, edit index.android.js
+        </Text>
+
+        <Text style={styles.instructions}>
+          Double tap R on your keyboard to reload,{'\n'}
+          Shake or press menu button for dev menu
+        </Text>
+
       </View>
     );
   }
+
+   call_button(){
+
+   	 NativeModules.ToastExample.show('调用原生方法的Demo');
+   }
+
 }
-var styles = StyleSheet.create({
+
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5FCFF',
   },
-  hello: {
+  welcome: {
     fontSize: 20,
     textAlign: 'center',
     margin: 10,
+  },
+  instructions: {
+    textAlign: 'center',
+    color: '#333333',
+    marginBottom: 5,
   },
 });
 

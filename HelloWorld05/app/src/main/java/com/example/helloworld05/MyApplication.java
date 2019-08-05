@@ -7,6 +7,7 @@ import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.shell.MainReactPackage;
 import com.facebook.soloader.SoLoader;
+import com.example.helloworld05.CustomToastPackage;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +30,8 @@ public class MyApplication extends Application implements ReactApplication {
         @Override
         protected List<ReactPackage> getPackages() {
             return Arrays.<ReactPackage>asList(
-                    new MainReactPackage()
+                    new MainReactPackage(),
+                    new CustomToastPackage()
             );
         }
 
