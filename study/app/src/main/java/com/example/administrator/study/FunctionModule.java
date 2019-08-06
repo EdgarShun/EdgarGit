@@ -14,11 +14,11 @@ import javax.annotation.Nonnull;
 
 public class FunctionModule extends ReactContextBaseJavaModule {
 
-    private Context mContext;
+
 
     public FunctionModule(@Nonnull ReactApplicationContext reactContext) {
         super(reactContext);
-        mContext = reactContext;
+        AppMethod.myContext = reactContext;
     }
 
     @Nonnull
@@ -30,8 +30,9 @@ public class FunctionModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void show() {
-        Intent jumpIntent = new Intent(mContext, MainActivity.class);
+        /*Intent jumpIntent = new Intent(AppMethod.myContext, MainActivity.class);
         jumpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK );
-        mContext.startActivity(jumpIntent);
+        AppMethod.myContext.startActivity(jumpIntent);*/
+
     }
 }
