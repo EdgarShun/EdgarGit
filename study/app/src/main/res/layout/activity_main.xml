@@ -67,5 +67,15 @@
             android:layout_weight="1"
             android:text="开始理解"
             android:textSize="20sp" />
+
+
+        <Button
+            android:id="@+id/to_RN"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="跳转RN面"
+            android:textSize="20sp" />
+
     </LinearLayout>
 </LinearLayout>

@@ -1,13 +1,18 @@
 package com.example.administrator.study;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.net.Uri;
 import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
+import android.provider.Settings;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.appcompat.app.AppCompatActivity;
+
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -21,7 +26,6 @@ import com.iflytek.aiui.AIUIEvent;
 import com.iflytek.aiui.AIUIListener;
 import com.iflytek.aiui.AIUIMessage;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -33,13 +37,15 @@ import java.lang.reflect.Method;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static String TAG = MainActivity.class.getSimpleName();
 
+    private final int OVERLAY_PERMISSION_REQ_CODE = 1;
+
 
     //录音权限
-    private String[] permissions = {Manifest.permission.RECORD_AUDIO,Manifest.permission.CALL_PHONE};
+    private String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.CALL_PHONE};
 
     private Toast mToast;
 
@@ -60,14 +66,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
 
-        //初始化界面
+//初始化界面
         initLayout();
-      /*  //用来消除打开APP的弹出来的窗口
-        closeAndroidPDialog();*/
+/* //用来消除打开APP的弹出来的窗口
+closeAndroidPDialog();*/
 
         mToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
 
-        //申请录音权限
+//申请录音权限
         requestPermission();
 
     }
@@ -83,31 +89,41 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         findViewById(R.id.nlp_stop).setOnClickListener(this);
 
-        mNlpText = (EditText)findViewById(R.id.nlp_text);
+        mNlpText = (EditText) findViewById(R.id.nlp_text);
+
+        findViewById(R.id.to_RN).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, MyReactActivity.class);
+                startActivity(intent);
+            }
+        });
+
     }
 
 
     //点击开始录音 点击开始录音的时候，检测有没有AIUIAgent，没有就创建它。
     @Override
     public void onClick(View v) {
-        if (!checkAIUIAgent()){
+        if (!checkAIUIAgent()) {
             return;
         }
 
         switch (v.getId()) {
-            // 开始语音理解
+// 开始语音理解
             case R.id.nlp_start:
                 startVoiceNlp();
                 break;
 
-            //停止录音
+//停止录音
             case R.id.nlp_stop:
                 stopVoiceNlp();
 
-            //开始语音理解
+//开始语音理解
             case R.id.nlp_understand:
                 startTextNlp();
                 break;
+
             default:
                 break;
         }
@@ -116,8 +132,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void stopVoiceNlp() {
 
-        Log.i( TAG, "停止录音nlp" );
-        // 停止录音
+        Log.i(TAG, "停止录音nlp");
+// 停止录音
         String params = "sample_rate=16000,data_type=audio";
         AIUIMessage stopRecord = new AIUIMessage(AIUIConstant.CMD_STOP_RECORD, 0, 0, params, null);
 
@@ -129,23 +145,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void startTextNlp() {
         String result_understand = mNlpText.getText().toString();
 
-        Log.i(TAG,result_understand);
+        Log.i(TAG, result_understand);
 
-        // 先发送唤醒消息，改变AIUI内部状态，只有唤醒状态才能接收文本输入
-//		if (AIUIConstant.STATE_WORKING != mAIUIState)
+// 先发送唤醒消息，改变AIUI内部状态，只有唤醒状态才能接收文本输入
+// if (AIUIConstant.STATE_WORKING != mAIUIState)
         {
             AIUIMessage wakeupMsg = new AIUIMessage(AIUIConstant.CMD_WAKEUP, 0, 0, "", null);
-            if (wakeupMsg != null){
-                Log.i(TAG,"唤醒了AIUI");
-            }else {
-                Log.i(TAG,"AIUI没有唤醒");
+            if (wakeupMsg != null) {
+                Log.i(TAG, "唤醒了AIUI");
+            } else {
+                Log.i(TAG, "AIUI没有唤醒");
             }
 
             mAIUIAgent.sendMessage(wakeupMsg);
         }
 
         try {
-            // 在输入参数中设置tag，则对应结果中也将携带该tag，可用于关联输入输出
+// 在输入参数中设置tag，则对应结果中也将携带该tag，可用于关联输入输出
             String params = "data_type=text,tag=text-tag";
             byte[] textData = result_understand.getBytes("utf-8");
 
@@ -160,37 +176,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void startVoiceNlp() {
 
-        Log.i( TAG, "start voice nlp" );
+        Log.i(TAG, "start voice nlp");
         mNlpText.setText("");
 
-        // 先发送唤醒消息，改变AIUI内部状态，只有唤醒状态才能接收语音输入
-        // 默认为oneshot 模式，即一次唤醒后就进入休眠，如果语音唤醒后，需要进行文本语义，请将改段逻辑copy至startTextNlp()开头处
-        if( AIUIConstant.STATE_WORKING != this.mAIUIState ){
+// 先发送唤醒消息，改变AIUI内部状态，只有唤醒状态才能接收语音输入
+// 默认为oneshot 模式，即一次唤醒后就进入休眠，如果语音唤醒后，需要进行文本语义，请将改段逻辑copy至startTextNlp()开头处
+        if (AIUIConstant.STATE_WORKING != this.mAIUIState) {
             AIUIMessage wakeupMsg = new AIUIMessage(AIUIConstant.CMD_WAKEUP, 0, 0, "", null);
             mAIUIAgent.sendMessage(wakeupMsg);
         }
 
-        // 打开AIUI内部录音机，开始录音
+// 打开AIUI内部录音机，开始录音
         String params = "sample_rate=16000,data_type=audio";
-        AIUIMessage writeMsg = new AIUIMessage( AIUIConstant.CMD_START_RECORD, 0, 0, params, null );
+        AIUIMessage writeMsg = new AIUIMessage(AIUIConstant.CMD_START_RECORD, 0, 0, params, null);
         mAIUIAgent.sendMessage(writeMsg);
 
     }
 
-    //用来检测AIUIAgent的
+        //用来检测AIUIAgent的
     private boolean checkAIUIAgent() {
-        if (null==mAIUIAgent){
-                Log.i(TAG,"赶快创建AIUIAgent");
-                //创建AIUIAgent
-                mAIUIAgent=AIUIAgent.createAgent(this,getAIUIParams(),mAIUIListener);
+        if (null == mAIUIAgent) {
+            Log.i(TAG, "赶快创建AIUIAgent");
+        //创建AIUIAgent
+            mAIUIAgent = AIUIAgent.createAgent(this, getAIUIParams(), mAIUIListener);
 
         }
 
-        if( null == mAIUIAgent ){
+        if (null == mAIUIAgent) {
             final String strErrorTip = "创建 AIUI Agent 失败！";
-            showTip( strErrorTip );
-            this.mNlpText.setText( strErrorTip );
-        } else{
+            showTip(strErrorTip);
+            this.mNlpText.setText(strErrorTip);
+        } else {
             showTip("AIUIAgent创建成功！");
         }
         return null != mAIUIAgent;
@@ -200,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String params = "";
         AssetManager assetManager = getResources().getAssets();
         try {
-            InputStream ins = assetManager.open( "cfg/aiui_phone.cfg" );
+            InputStream ins = assetManager.open("cfg/aiui_phone.cfg");
             byte[] buffer = new byte[ins.available()];
             ins.read(buffer);
             ins.close();
@@ -213,23 +229,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-    private AIUIListener mAIUIListener=new AIUIListener() {
+    private AIUIListener mAIUIListener = new AIUIListener() {
 
         @Override
         public void onEvent(AIUIEvent event) {
             switch (event.eventType) {
 
 
-
                 case AIUIConstant.EVENT_WAKEUP:
                     //唤醒事件
-                    Log.i( TAG,  "唤醒事件on event: "+ event.eventType );
+                    Log.i(TAG, "唤醒事件on event: " + event.eventType);
                     showTip("进入识别状态");
                     break;
 
                 case AIUIConstant.EVENT_RESULT: {
                     //结果事件
-                    Log.i( TAG,  "结果事件on event: "+ event.eventType );
+                    Log.i(TAG, "结果事件on event: " + event.eventType);
                     try {
 
                         JSONObject bizParamJson = new JSONObject(event.info);
@@ -239,108 +254,109 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                         if (content.has("cnt_id")) {
                             String cnt_id = content.getString("cnt_id");
-//                            JSONObject cntJson = new JSONObject(new String(event.data.getByteArray(cnt_id), "utf-8"));
+                            // JSONObject cntJson = new JSONObject(new String(event.data.getByteArray(cnt_id), "utf-8"));
 
                             String cntStr = new String(new String(event.data.getByteArray(cnt_id), "utf-8"));
 
 
                             JSONObject cntJson = new JSONObject(cntStr);
 
-//                            mNlpText.append(cntJson.toString());
+                            // mNlpText.append(cntJson.toString());
 
                             String sub = params.optString("sub");
 
                             JSONObject result = cntJson.optJSONObject("intent");
 
 
-
-
                             //为什么我的sub就一直死iat，而不是nlp？
                             //是听写结果，而不是语义结果，这是为什么？
-
 
 
                             if ("nlp".equals(sub) && result.length() > 2) {
                                 // 解析得到语义结果
                                 String str = "";
                                 //在线语义结果
-                                if(result.optInt("rc") == 0){
+                                if (result.optInt("rc") == 0) {
                                     JSONObject answer = result.optJSONObject("answer");
-                                    if(answer != null){
+                                    if (answer != null) {
                                         str = answer.optString("text");
                                     }
-                                }else{
+                                } else {
                                     str = "rc4，无法识别";
                                 }
-                                if (!TextUtils.isEmpty(str)){
-                                    mNlpText.append( "\n" );
+                                if (!TextUtils.isEmpty(str)) {
+                                    mNlpText.append("\n");
                                     mNlpText.append(str);
                                 }
                             }
 
 
-
-
                         }
                     } catch (Throwable e) {
                         e.printStackTrace();
-                        mNlpText.append( "\n" );
-                        mNlpText.append( e.getLocalizedMessage() );
+                        mNlpText.append("\n");
+                        mNlpText.append(e.getLocalizedMessage());
                     }
 
-                    mNlpText.append( "\n" );
+                    mNlpText.append("\n");
 
 
-                } break;
+                }
+                break;
 
 
                 case AIUIConstant.EVENT_ERROR: {
-                    //错误事件
-                    Log.i( TAG,  "on event: "+ "错误事件触发"+event.eventType );
-                    Log.i( TAG,  "错误: "+ event.arg1+"\n"+event.info );
-                    mNlpText.append( "\n" );
-                    mNlpText.append( "错误: "+event.arg1+"\n"+event.info );
-                } break;
+            //错误事件
+                    Log.i(TAG, "on event: " + "错误事件触发" + event.eventType);
+                    Log.i(TAG, "错误: " + event.arg1 + "\n" + event.info);
+                    mNlpText.append("\n");
+                    mNlpText.append("错误: " + event.arg1 + "\n" + event.info);
+                }
+                break;
 
                 case AIUIConstant.EVENT_VAD: {
-                    //vad事件
+            //vad事件
                     if (AIUIConstant.VAD_BOS == event.arg1) {
-                        //找到语音前端点
+            //找到语音前端点
                         showTip("找到语音前端点" + event.arg1);
                     } else if (AIUIConstant.VAD_EOS == event.arg1) {
-                        //找到语音后端点
+            //找到语音后端点
                         showTip("找到语音后端点" + event.arg1);
                     } else {
                         showTip("vad事件event.arg2" + event.arg2);
                     }
-                } break;
+                }
+                break;
 
                 case AIUIConstant.EVENT_START_RECORD: {
-                    //开始录音事件
-                    Log.i( TAG,  "开始录音事件on event: "+ event.eventType );
+            //开始录音事件
+                    Log.i(TAG, "开始录音事件on event: " + event.eventType);
                     showTip("开始录音");
-                } break;
+                }
+                break;
 
                 case AIUIConstant.EVENT_STOP_RECORD: {
-                    //停止录音事件
-                    Log.i( TAG,  "停止录音事件on event: "+ event.eventType );
+            //停止录音事件
+                    Log.i(TAG, "停止录音事件on event: " + event.eventType);
                     showTip("停止录音");
-                } break;
+                }
+                break;
 
-                case AIUIConstant.EVENT_STATE: {	// 状态事件
+                case AIUIConstant.EVENT_STATE: { // 状态事件
                     mAIUIState = event.arg1;
 
                     if (AIUIConstant.STATE_IDLE == mAIUIState) {
-                        // 闲置状态，AIUI未开启
+            // 闲置状态，AIUI未开启
                         showTip("STATE_IDLE");
                     } else if (AIUIConstant.STATE_READY == mAIUIState) {
-                        // AIUI已就绪，等待唤醒
+            // AIUI已就绪，等待唤醒
                         showTip("STATE_READY");
                     } else if (AIUIConstant.STATE_WORKING == mAIUIState) {
-                        // AIUI工作中，可进行交互
+            // AIUI工作中，可进行交互
                         showTip("STATE_WORKING");
                     }
-                } break;
+                }
+                break;
 
                 default:
                     break;
@@ -353,17 +369,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if( null != this.mAIUIAgent ){
+        if (null != this.mAIUIAgent) {
             AIUIMessage stopMsg = new AIUIMessage(AIUIConstant.CMD_STOP, 0, 0, null, null);
-            mAIUIAgent.sendMessage( stopMsg );
+            mAIUIAgent.sendMessage(stopMsg);
 
             this.mAIUIAgent.destroy();
             this.mAIUIAgent = null;
         }
     }
 
-    private void showTip(final String str)
-    {
+    private void showTip(final String str) {
         runOnUiThread(new Runnable() {
 
             @Override
@@ -385,9 +400,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
 
-        if (requestCode == 322){
-            for (int i=0;i<permissions.length;i++){
-                if (grantResults[i]!=PERMISSION_GRANTED){
+        if (requestCode == 322) {
+            for (int i = 0; i < permissions.length; i++) {
+                if (grantResults[i] != PERMISSION_GRANTED) {
                     this.finish();
                 }
             }
@@ -400,21 +415,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             int i = ContextCompat.checkSelfPermission(this, permissions[0]);
-            int j = ContextCompat.checkSelfPermission(this,permissions[1]);
+            int j = ContextCompat.checkSelfPermission(this, permissions[1]);
 
             if (i != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, permissions, 321);
             }
 
-            if (j !=PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(this,permissions,322);
+            if (j != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, permissions, 322);
             }
+
+          /*  if (!Settings.canDrawOverlays(this)) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, OVERLAY_PERMISSION_REQ_CODE);
+            }*/
+
         }
     }
 
 
     //用来消除打开APP的弹出来的窗口
-    private void closeAndroidPDialog(){
+    private void closeAndroidPDialog() {
         try {
             Class aClass = Class.forName("android.content.pm.PackageParser$Package");
             Constructor declaredConstructor = aClass.getDeclaredConstructor(String.class);
@@ -434,4 +456,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             e.printStackTrace();
         }
     }
+
+/*    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == OVERLAY_PERMISSION_REQ_CODE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (!Settings.canDrawOverlays(this)) {
+// SYSTEM_ALERT_WINDOW permission not granted
+                }
+            }
+        }
+    }*/
+
 }
